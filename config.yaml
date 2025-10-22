@@ -1,0 +1,53 @@
+# Trading Strategy Configuration
+exchange: binance
+symbols:
+  base: ["BTC/USDT", "ETH/USDT"]
+timeframe: "1h"
+
+# Signal Generation Windows
+windows:
+  ols_beta: 200        # Bars for rolling OLS hedge ratio
+  zscore: 100          # Bars for z-score calculation
+
+# Entry/Exit Thresholds
+thresholds:
+  z_in: 2.0            # Enter when |z| > this
+  z_out: 0.5           # Exit when |z| < this
+  z_stop: 3.5          # Hard stop when |z| > this
+
+# Risk Management
+risk:
+  target_sigma_usd: 200.0          # P&L per 1.0 z move
+  max_notional_usd_per_leg: 25000   # Maximum position per leg
+  max_adv_frac: 0.05               # Max fraction of average daily volume
+
+# Cost Assumptions
+costs:
+  fee_bps: 10          # 0.10% per leg (10 basis points)
+  slippage_bps: 5      # 0.05% slippage (5 basis points)
+
+# Filters
+filters:
+  min_adv_usd: 5000000             # Minimum average daily volume in USD
+  max_realized_vol_annual: 2.0     # Maximum annualized volatility
+  min_bars_required: 250           # Minimum bars needed to start trading
+
+# Backtesting
+backtest:
+  initial_capital: 100000
+  start_date: null                 # Use null for all available data
+  end_date: null
+  walk_forward_split: 0.7          # Train/test split ratio
+
+# Notifications
+notifications:
+  enabled: true
+  slack_enabled: true
+  telegram_enabled: false
+  debounce_minutes: 5              # Minimum time between alerts
+
+# Logging
+logging:
+  level: INFO
+  format: json
+  file: logs/scanner.log
