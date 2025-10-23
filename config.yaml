@@ -1,7 +1,119 @@
 # Trading Strategy Configuration
 exchange: binance
+
+# Single pair for backwards compatibility
 symbols:
   base: ["BTC/USDT", "ETH/USDT"]
+
+# Multiple pairs configuration
+pairs:
+  - name: "BTC-ETH"
+    asset_y: "ETH/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "SOL-ETH"
+    asset_y: "SOL/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "AVAX-SOL"
+    asset_y: "AVAX/USDT"
+    asset_x: "SOL/USDT"
+    enabled: true
+
+  - name: "MATIC-BNB"
+    asset_y: "MATIC/USDT"
+    asset_x: "BNB/USDT"
+    enabled: true
+
+  - name: "LINK-UNI"
+    asset_y: "LINK/USDT"
+    asset_x: "UNI/USDT"
+    enabled: true
+
+  - name: "DOT-ATOM"
+    asset_y: "DOT/USDT"
+    asset_x: "ATOM/USDT"
+    enabled: true
+
+  # BTC pairs
+  - name: "SOL-BTC"
+    asset_y: "SOL/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "AVAX-BTC"
+    asset_y: "AVAX/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "MATIC-BTC"
+    asset_y: "MATIC/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "BNB-BTC"
+    asset_y: "BNB/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "LINK-BTC"
+    asset_y: "LINK/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "UNI-BTC"
+    asset_y: "UNI/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "DOT-BTC"
+    asset_y: "DOT/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "ATOM-BTC"
+    asset_y: "ATOM/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  # ETH pairs
+  - name: "AVAX-ETH"
+    asset_y: "AVAX/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "MATIC-ETH"
+    asset_y: "MATIC/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "BNB-ETH"
+    asset_y: "BNB/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "LINK-ETH"
+    asset_y: "LINK/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "UNI-ETH"
+    asset_y: "UNI/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "DOT-ETH"
+    asset_y: "DOT/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "ATOM-ETH"
+    asset_y: "ATOM/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
 timeframe: "1h"
 
 # Signal Generation Windows
