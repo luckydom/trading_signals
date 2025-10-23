@@ -114,6 +114,77 @@ pairs:
     asset_x: "ETH/USDT"
     enabled: true
 
+  # Additional cross-asset pairs (non-BTC/ETH anchors)
+  - name: "BNB-SOL"
+    asset_y: "BNB/USDT"
+    asset_x: "SOL/USDT"
+    enabled: true
+
+  - name: "BNB-AVAX"
+    asset_y: "BNB/USDT"
+    asset_x: "AVAX/USDT"
+    enabled: true
+
+  - name: "SOL-MATIC"
+    asset_y: "SOL/USDT"
+    asset_x: "MATIC/USDT"
+    enabled: true
+
+  - name: "SOL-LINK"
+    asset_y: "SOL/USDT"
+    asset_x: "LINK/USDT"
+    enabled: true
+
+  - name: "SOL-UNI"
+    asset_y: "SOL/USDT"
+    asset_x: "UNI/USDT"
+    enabled: true
+
+  - name: "AVAX-MATIC"
+    asset_y: "AVAX/USDT"
+    asset_x: "MATIC/USDT"
+    enabled: true
+
+  - name: "AVAX-LINK"
+    asset_y: "AVAX/USDT"
+    asset_x: "LINK/USDT"
+    enabled: true
+
+  - name: "AVAX-UNI"
+    asset_y: "AVAX/USDT"
+    asset_x: "UNI/USDT"
+    enabled: true
+
+  - name: "MATIC-LINK"
+    asset_y: "MATIC/USDT"
+    asset_x: "LINK/USDT"
+    enabled: true
+
+  - name: "MATIC-UNI"
+    asset_y: "MATIC/USDT"
+    asset_x: "UNI/USDT"
+    enabled: true
+
+  - name: "LINK-DOT"
+    asset_y: "LINK/USDT"
+    asset_x: "DOT/USDT"
+    enabled: true
+
+  - name: "LINK-ATOM"
+    asset_y: "LINK/USDT"
+    asset_x: "ATOM/USDT"
+    enabled: true
+
+  - name: "UNI-DOT"
+    asset_y: "UNI/USDT"
+    asset_x: "DOT/USDT"
+    enabled: true
+
+  - name: "UNI-ATOM"
+    asset_y: "UNI/USDT"
+    asset_x: "ATOM/USDT"
+    enabled: true
+
 timeframe: "1h"
 
 # Signal Generation Windows

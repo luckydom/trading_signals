@@ -1,75 +1,78 @@
 #!/usr/bin/env python3
-"""Quick status check of current market conditions."""
+"""Quick status check of configured pairs.
+
+Prints only pairs where |z-score| exceeds the configured entry threshold
+(`thresholds.z_in`, default 2.0) in `config.yaml`.
+"""
 
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 
-from src.data.cache import DataCache
-from src.features.spread import SpreadCalculator
-from src.strategy.state import TradingStateMachine
 import pandas as pd
 
-# Load latest data
-cache = DataCache()
-btc_data = cache.load_ohlcv("binance", "BTC/USDT", "1h")
-eth_data = cache.load_ohlcv("binance", "ETH/USDT", "1h")
+from src.data.cache import DataCache
+from src.features.spread import SpreadCalculator
+from src.utils.config import get_config
 
-# Calculate signals
-signals = SpreadCalculator.calculate_all_signals(
-    btc_prices=btc_data['close'],
-    eth_prices=eth_data['close'],
-    beta_window=200,
-    zscore_window=100
-)
 
-# Get latest values
-latest = signals.iloc[-1]
-print("="*60)
-print("CURRENT MARKET STATUS")
-print("="*60)
-print(f"Timestamp: {signals.index[-1]}")
-print(f"BTC Price: ${latest['btc_price']:,.2f}")
-print(f"ETH Price: ${latest['eth_price']:,.2f}")
-print(f"Beta (Hedge Ratio): {latest['beta']:.3f}")
-print(f"Spread: {latest['spread']:.4f}")
-print(f"Z-Score: {latest['zscore']:.3f}")
-print()
+def main():
+    config = get_config()
 
-# Check state
-state = TradingStateMachine(z_in=2.0, z_out=0.5, z_stop=3.5)
-position = state.get_position_info()
-print(f"Current Position: {position['state']}")
-print()
+    exchange = config.get("exchange", "binance")
+    timeframe = config.get("timeframe", "1h")
+    z_threshold = float(config.get("thresholds.z_in", 2.0))
+    beta_window = int(config.get("windows.ols_beta", 200))
+    zscore_window = int(config.get("windows.zscore", 100))
 
-# Trading zone analysis
-z = latest['zscore']
-if pd.notna(z):
-    if z < -2.0:
-        print("🟢 ENTRY ZONE: Long spread signal (z < -2.0)")
-    elif z > 2.0:
-        print("🔴 ENTRY ZONE: Short spread signal (z > 2.0)")
-    elif abs(z) < 0.5:
-        print("⚪ EXIT ZONE: Close position signal (|z| < 0.5)")
-    elif abs(z) > 3.5:
-        print("⛔ STOP LOSS ZONE: Emergency exit (|z| > 3.5)")
-    elif z < -1.5:
-        print("🟡 APPROACHING: Near long entry (z = {:.2f})".format(z))
-    elif z > 1.5:
-        print("🟡 APPROACHING: Near short entry (z = {:.2f})".format(z))
-    else:
-        print("⚫ NEUTRAL ZONE: No action (z = {:.2f})".format(z))
-else:
-    print("❌ No valid z-score")
+    pairs = [p for p in (config.get("pairs", []) or []) if p.get("enabled", True)]
+    if not pairs:
+        # Fallback to legacy BTC/ETH if no pairs configured
+        pairs = [{
+            "name": "BTC-ETH",
+            "asset_y": "ETH/USDT",
+            "asset_x": "BTC/USDT",
+            "enabled": True,
+        }]
 
-# Historical stats
-print()
-print("SIGNAL QUALITY (last 500 bars):")
-metrics = SpreadCalculator.calculate_signal_quality_metrics(signals)
-for key, value in metrics.items():
-    if isinstance(value, float):
-        print(f"  {key}: {value:.2f}")
-    else:
-        print(f"  {key}: {value}")
+    cache = DataCache()
+    printed_any = False
 
-print("="*60)
+    for pair in pairs:
+        name = pair["name"]
+        y_symbol = pair["asset_y"]  # numerator
+        x_symbol = pair["asset_x"]  # denominator
+
+        y_data = cache.load_ohlcv(exchange, y_symbol, timeframe)
+        x_data = cache.load_ohlcv(exchange, x_symbol, timeframe)
+
+        if y_data.empty or x_data.empty:
+            continue
+
+        signals = SpreadCalculator.calculate_all_signals(
+            btc_prices=x_data["close"],  # X
+            eth_prices=y_data["close"],  # Y
+            beta_window=beta_window,
+            zscore_window=zscore_window,
+        )
+
+        latest = signals.iloc[-1]
+        z = latest["zscore"]
+        if pd.isna(z) or abs(z) <= z_threshold:
+            continue
+
+        printed_any = True
+        direction = "LONG" if z < 0 else "SHORT"
+        ts = signals.index[-1]
+        print(
+            f"{name}: {direction} spread | z={z:.2f} | beta={latest['beta']:.3f} | "
+            f"{y_symbol.split('/')[0]}={latest['eth_price']:.2f} | {x_symbol.split('/')[0]}={latest['btc_price']:.2f} | {ts}"
+        )
+
+    # Optional: print nothing if none exceed. Keep silent per requirement.
+    if not printed_any:
+        pass
+
+
+if __name__ == "__main__":
+    main()
