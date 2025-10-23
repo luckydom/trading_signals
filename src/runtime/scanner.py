@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, Optional
-
+import pandas as pd
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 

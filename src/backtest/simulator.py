@@ -333,3 +333,90 @@ class VectorizedBacktester:
             'avg_duration_hours': avg_duration,
             'final_equity': equity_curve.iloc[-1]
         }
+
+
+if __name__ == "__main__":
+    """Run backtester from command line."""
+    import sys
+    from pathlib import Path
+
+    # Add project root to path
+    sys.path.append(str(Path(__file__).parent.parent.parent))
+
+    from src.data.cache import DataCache
+    from src.features.spread import SpreadCalculator
+    from src.utils.config import get_config
+
+    # Parse arguments
+    import argparse
+    parser = argparse.ArgumentParser(description='Run backtest')
+    parser.add_argument('--config', default='config.yaml', help='Config file path')
+    parser.add_argument('--start-date', help='Start date (YYYY-MM-DD)')
+    parser.add_argument('--end-date', help='End date (YYYY-MM-DD)')
+    args = parser.parse_args()
+
+    # Load config
+    config = get_config(args.config)
+    cache = DataCache()
+
+    # Load data
+    print("Loading data from cache...")
+    btc_data = cache.load_ohlcv(
+        config.get("exchange", "binance"),
+        "BTC/USDT",
+        config.get("timeframe", "1h")
+    )
+    eth_data = cache.load_ohlcv(
+        config.get("exchange", "binance"),
+        "ETH/USDT",
+        config.get("timeframe", "1h")
+    )
+
+    if btc_data.empty or eth_data.empty:
+        print("Error: No data in cache. Run 'python main.py cache --update' first.")
+        sys.exit(1)
+
+    # Apply date filters if specified
+    if args.start_date:
+        start = pd.to_datetime(args.start_date, utc=True)
+        btc_data = btc_data[btc_data.index >= start]
+        eth_data = eth_data[eth_data.index >= start]
+
+    if args.end_date:
+        end = pd.to_datetime(args.end_date, utc=True)
+        btc_data = btc_data[btc_data.index <= end]
+        eth_data = eth_data[eth_data.index <= end]
+
+    # Calculate signals
+    print("Calculating signals...")
+    signals = SpreadCalculator.calculate_all_signals(
+        btc_prices=btc_data['close'],
+        eth_prices=eth_data['close'],
+        beta_window=config.get("windows.ols_beta", 200),
+        zscore_window=config.get("windows.zscore", 100)
+    )
+
+    # Run backtest
+    print("Running backtest...")
+    backtester = VectorizedBacktester(
+        initial_capital=config.get("backtest.initial_capital", 100000),
+        fee_bps=config.get("costs.fee_bps", 10),
+        slippage_bps=config.get("costs.slippage_bps", 5),
+        target_sigma_usd=config.get("risk.target_sigma_usd", 200),
+        max_notional_per_leg=config.get("risk.max_notional_usd_per_leg", 25000)
+    )
+
+    results = backtester.run_backtest(
+        signals,
+        z_in=config.get("thresholds.z_in", 2.0),
+        z_out=config.get("thresholds.z_out", 0.5),
+        z_stop=config.get("thresholds.z_stop", 3.5)
+    )
+
+    # Print results
+    print("\n" + "="*60)
+    print("BACKTEST RESULTS")
+    print("="*60)
+    for key, value in results.metrics.items():
+        print(f"{key:25s}: {value:,.2f}" if isinstance(value, (int, float)) else f"{key:25s}: {value}")
+    print("="*60)

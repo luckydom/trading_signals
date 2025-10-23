@@ -12,15 +12,28 @@ class Config:
 
     def __init__(self, config_path: str = "config.yaml", env_path: str = ".env"):
         """Initialize configuration from YAML and environment files."""
-        # Load environment variables
-        if Path(env_path).exists():
-            load_dotenv(env_path)
+        # Check if .env exists and load it
+        if not Path(env_path).exists():
+            raise FileNotFoundError(
+                f"\n{'='*60}\n"
+                f"ERROR: Environment file '{env_path}' not found!\n"
+                f"{'='*60}\n"
+                f"Please create it by copying .env.example:\n"
+                f"  cp .env.example .env\n"
+                f"Then edit it with your API keys and settings.\n"
+                f"{'='*60}"
+            )
+
+        load_dotenv(env_path)
 
         # Load YAML configuration
         self.config = self._load_yaml(config_path)
 
         # Override with environment variables
         self._apply_env_overrides()
+
+        # Validate configuration
+        self._validate_config()
 
     def _load_yaml(self, path: str) -> Dict[str, Any]:
         """Load configuration from YAML file."""
@@ -53,6 +66,42 @@ class Config:
         if os.getenv("NOTIFY_TELEGRAM_CHAT_ID"):
             self.config.setdefault("notifications", {})
             self.config["notifications"]["telegram_chat_id"] = os.getenv("NOTIFY_TELEGRAM_CHAT_ID")
+
+    def _validate_config(self):
+        """Validate required configuration settings."""
+        # Skip validation in development mode
+        if os.getenv("DEV_MODE") == "true":
+            print("⚠️  Running in DEVELOPMENT MODE - API validation skipped")
+            return
+
+        errors = []
+
+        # Check for API credentials (optional but warn if missing)
+        if not os.getenv("API_KEY") or os.getenv("API_KEY") == "your_api_key_here":
+            errors.append("API_KEY not set or still has default value")
+
+        if not os.getenv("API_SECRET") or os.getenv("API_SECRET") == "your_api_secret_here":
+            errors.append("API_SECRET not set or still has default value")
+
+        # Check exchange configuration
+        if not self.config.get("exchange"):
+            errors.append("Exchange not configured in config.yaml")
+
+        if errors:
+            error_msg = (
+                f"\n{'='*60}\n"
+                f"CONFIGURATION ERRORS:\n"
+                f"{'='*60}\n"
+            )
+            for error in errors:
+                error_msg += f"  ❌ {error}\n"
+            error_msg += (
+                f"{'='*60}\n"
+                f"Please edit .env file with your actual credentials.\n"
+                f"Or set DEV_MODE=true in .env to skip validation.\n"
+                f"{'='*60}"
+            )
+            raise ValueError(error_msg)
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get configuration value by dot-notation key."""

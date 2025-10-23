@@ -77,14 +77,14 @@ def main():
             print("Error: No data in cache. Run 'cache --update' first.")
             return
 
-        # Apply date filters if specified
+        # Apply date filters if specified (make timezone-aware)
         if args.start_date:
-            start = pd.to_datetime(args.start_date)
+            start = pd.to_datetime(args.start_date, utc=True)
             btc_data = btc_data[btc_data.index >= start]
             eth_data = eth_data[eth_data.index >= start]
 
         if args.end_date:
-            end = pd.to_datetime(args.end_date)
+            end = pd.to_datetime(args.end_date, utc=True)
             btc_data = btc_data[btc_data.index <= end]
             eth_data = eth_data[eth_data.index <= end]
 
@@ -168,13 +168,15 @@ def main():
         if args.update:
             print("Updating cache...")
             exchange = ExchangeClient()
+            # Need more bars for proper signal generation (beta_window + zscore_window + buffer)
+            min_bars = 500  # Increase to 500 bars for better signal generation
             data = cache.update_cache(
                 exchange,
                 args.symbols,
                 config.get("timeframe", "1h"),
-                lookback_bars=config.get("filters.min_bars_required", 250)
+                lookback_bars=min_bars
             )
-            print(f"Cache updated for {len(data)} symbols")
+            print(f"Cache updated for {len(data)} symbols with {min_bars} bars each")
 
     else:
         parser.print_help()

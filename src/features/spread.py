@@ -233,14 +233,14 @@ class SpreadCalculator:
                 'beta_stability': np.nan
             }
 
-        # Calculate metrics
+        # Calculate metrics (ensure all values are JSON serializable)
         metrics = {
-            'mean_zscore': clean_zscore.mean(),
-            'std_zscore': clean_zscore.std(),
-            'spread_half_life': SpreadCalculator.calculate_spread_half_life(clean_spread),
-            'zero_crossings': np.sum(np.diff(np.sign(clean_zscore)) != 0),
-            'outlier_pct': np.mean(np.abs(clean_zscore) > 3) * 100,
-            'beta_stability': recent['beta'].std() if 'beta' in recent else np.nan
+            'mean_zscore': float(clean_zscore.mean()),
+            'std_zscore': float(clean_zscore.std()),
+            'spread_half_life': float(SpreadCalculator.calculate_spread_half_life(clean_spread)),
+            'zero_crossings': int(np.sum(np.diff(np.sign(clean_zscore)) != 0)),
+            'outlier_pct': float(np.mean(np.abs(clean_zscore) > 3) * 100),
+            'beta_stability': float(recent['beta'].std()) if 'beta' in recent else np.nan
         }
 
         return metrics

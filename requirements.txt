@@ -30,3 +30,5 @@ pre-commit>=3.5.0
 # Scheduling and monitoring
 schedule>=1.2.0
 structlog>=23.0.0
+
+numba
