@@ -16,6 +16,8 @@ class TradeTicketGenerator:
         self,
         signal: TradingSignal,
         position_size: PositionSize,
+        y_symbol: str,
+        x_symbol: str,
         funding_info: Optional[Dict] = None
     ) -> str:
         """
@@ -32,27 +34,31 @@ class TradeTicketGenerator:
         # Format timestamp
         timestamp_str = signal.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
 
+        # Resolve leg labels from symbols (use base asset names)
+        y_name = (y_symbol.split("/")[0] if "/" in y_symbol else y_symbol)
+        x_name = (x_symbol.split("/")[0] if "/" in x_symbol else x_symbol)
+
         # Determine action
         if signal.signal_type == SignalType.ENTER_LONG_SPREAD:
-            action = "ENTER Long Spread (ETH long / BTC short)"
-            eth_side = "LONG"
-            btc_side = "SHORT"
+            action = f"ENTER Long Spread ({y_name} long / {x_name} short)"
+            y_side = "LONG"
+            x_side = "SHORT"
         elif signal.signal_type == SignalType.ENTER_SHORT_SPREAD:
-            action = "ENTER Short Spread (ETH short / BTC long)"
-            eth_side = "SHORT"
-            btc_side = "LONG"
+            action = f"ENTER Short Spread ({y_name} short / {x_name} long)"
+            y_side = "SHORT"
+            x_side = "LONG"
         elif signal.signal_type == SignalType.EXIT_POSITION:
             action = "EXIT Position"
-            eth_side = "CLOSE"
-            btc_side = "CLOSE"
+            y_side = "CLOSE"
+            x_side = "CLOSE"
         elif signal.signal_type == SignalType.STOP_LOSS:
             action = "STOP LOSS Triggered"
-            eth_side = "CLOSE"
-            btc_side = "CLOSE"
+            y_side = "CLOSE"
+            x_side = "CLOSE"
         else:
             action = "NO ACTION"
-            eth_side = "NONE"
-            btc_side = "NONE"
+            y_side = "NONE"
+            x_side = "NONE"
 
         # Build ticket
         ticket_lines = [
@@ -66,12 +72,12 @@ class TradeTicketGenerator:
             f"  Z-score: {signal.zscore:.3f}",
             f"  Beta (hedge ratio): {signal.beta:.3f}",
             f"  Spread: {signal.spread:.4f}",
-            f"  BTC Price: ${signal.btc_price:,.2f}",
-            f"  ETH Price: ${signal.eth_price:,.2f}",
+            f"  {x_name} Price: ${signal.btc_price:,.2f}",
+            f"  {y_name} Price: ${signal.eth_price:,.2f}",
             "",
             "Position Details:",
-            f"  ETH: {eth_side} ${position_size.eth_notional_usd:,.2f} ({position_size.eth_units:.4f} ETH)",
-            f"  BTC: {btc_side} ${position_size.btc_notional_usd:,.2f} ({position_size.btc_units:.6f} BTC)",
+            f"  {y_name}: {y_side} ${position_size.eth_notional_usd:,.2f} ({position_size.eth_units:.4f} {y_name})",
+            f"  {x_name}: {x_side} ${position_size.btc_notional_usd:,.2f} ({position_size.btc_units:.6f} {x_name})",
             f"  Total Notional: ${position_size.total_notional:,.2f}",
             f"  Leverage: {position_size.leverage:.1f}x",
             "",

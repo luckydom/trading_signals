@@ -262,13 +262,13 @@ costs:
 
 # Filters
 filters:
-  min_adv_usd: 1000000             # Minimum average hourly dollar volume threshold
+  min_adv_usd: 10000             # Minimum average hourly dollar volume threshold
   max_realized_vol_annual: 2.0     # Maximum annualized volatility
   min_bars_required: 250           # Minimum bars needed to start trading
 
 # Backtesting
 backtest:
-  initial_capital: 100000
+  initial_capital: 10000
   start_date: null                 # Use null for all available data
   end_date: null
   walk_forward_split: 0.7          # Train/test split ratio

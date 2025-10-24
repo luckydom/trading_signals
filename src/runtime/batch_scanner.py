@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import List
+import time
 import pandas as pd
 
 # Add project root to path
@@ -73,6 +74,8 @@ def run_batch(
     logger.info(f"Starting batch scanner run: {run_id}")
 
     tickets: List[str] = []
+    # Per-message throttle seconds (Discord typical limits are strict; be conservative)
+    throttle_sec = float(config.get("notifications.throttle_seconds", 0.75) or 0.75)
 
     pairs = [p for p in (config.get("pairs", []) or []) if p.get("enabled", True)]
 
@@ -178,11 +181,30 @@ def run_batch(
                     btc_adv_usd=x_adv,
                     eth_adv_usd=y_adv
                 )
-                # Ticket
-                ticket = ticket_gen.generate_ticket(signal, pos, funding_info={})
+                # Ticket with correct asset labels
+                ticket = ticket_gen.generate_ticket(
+                    signal, pos, y_symbol=y_symbol, x_symbol=x_symbol, funding_info={}
+                )
                 ticket_file = ticket_gen.save_ticket(ticket, run_id)
                 logger.info(f"{name}: ticket saved -> {ticket_file}")
                 tickets.append(f"{name}\n{ticket}")
+
+                # Send one message per ticket with simple throttling to respect webhook limits
+                if not dry_run:
+                    sent_any = False
+                    if notifier.slack_enabled and notifier.slack_webhook:
+                        sent_any = notifier._send_slack(ticket) or sent_any
+                        time.sleep(throttle_sec)
+                    if notifier.discord_webhook:
+                        # Attempt send; if it fails due to rate limit, do a simple backoff
+                        ok = notifier._send_discord(ticket)
+                        if not ok:
+                            time.sleep(max(throttle_sec * 2, 2.0))
+                            notifier._send_discord(ticket)
+                        time.sleep(throttle_sec)
+                    if not sent_any and not notifier.discord_webhook:
+                        # Fallback to console if no channels configured
+                        print(ticket)
             else:
                 logger.info(f"{name}: no signal")
 
@@ -190,18 +212,7 @@ def run_batch(
             logger.error(f"{name}: error {e}")
             continue
 
-    # Send one aggregated message to available channels (Slack/Discord)
-    if tickets and not dry_run:
-        sep = "\n\n" + ("-" * 60) + "\n\n"
-        summary = f"Trade tickets generated: {len(tickets)}\n\n" + sep.join(tickets)
-        # Prefer Slack if configured, also send to Discord if configured
-        sent = False
-        if notifier.slack_enabled and notifier.slack_webhook:
-            sent = notifier._send_slack(summary) or sent
-        if notifier.discord_webhook:
-            sent = notifier._send_discord(summary) or sent
-        if not sent:
-            print(summary)
+    # Previously: aggregated summary. Now we send per ticket above.
 
     # Console summary
     print(f"Tickets this run: {len(tickets)}")
