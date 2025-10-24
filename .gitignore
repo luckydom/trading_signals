@@ -4,6 +4,7 @@ data/
 .env
 logs/
 __pycache__/
-src/features/__pycache__/
-src/runtime/__pycache__/
-src/utils/__pycache__/
+src/features/__pycache__/spread.cpython-312.pyc
+src/runtime/__pycache__/scanner.cpython-312.pyc
+src/utils/__pycache__/config.cpython-312.pyc
+tmp_scan_configs/

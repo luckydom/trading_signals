@@ -25,6 +25,8 @@ class NotificationManager:
         self.telegram_enabled = config.get("notifications.telegram_enabled", False)
         self.telegram_token = config.get("notifications.telegram_token")
         self.telegram_chat_id = config.get("notifications.telegram_chat_id")
+        # Discord (optional)
+        self.discord_webhook = config.get("notifications.discord_webhook")
 
         # Debounce settings
         self.last_notification_time = None
@@ -33,7 +35,8 @@ class NotificationManager:
     def send_trade_signal(
         self,
         signal: TradingSignal,
-        position_size: PositionSize
+        position_size: PositionSize,
+        ticket_text: Optional[str] = None
     ) -> bool:
         """
         Send trade signal notification.
@@ -64,6 +67,11 @@ class NotificationManager:
 
         if self.telegram_enabled and self.telegram_token and self.telegram_chat_id:
             success = success and self._send_telegram(message)
+
+        # Discord webhook
+        if self.discord_webhook:
+            text = ticket_text or message
+            success = success and self._send_discord(text)
 
         # Update last notification time
         if success:
@@ -169,6 +177,19 @@ class NotificationManager:
             self.logger.error(f"Telegram notification failed: {e}")
             return False
 
+    def _send_discord(self, content: str) -> bool:
+        """Send a message to Discord via incoming webhook."""
+        try:
+            resp = requests.post(self.discord_webhook, json={"content": content}, timeout=10)
+            if resp.status_code in (200, 204):
+                self.logger.info("Discord notification sent")
+                return True
+            self.logger.error(f"Discord error: {resp.status_code} {resp.text}")
+            return False
+        except Exception as e:
+            self.logger.error(f"Discord notification failed: {e}")
+            return False
+
     def send_error_notification(self, error_message: str) -> bool:
         """Send error notification."""
         if not self.enabled:
@@ -182,5 +203,8 @@ class NotificationManager:
 
         if self.telegram_enabled and self.telegram_token:
             success = success and self._send_telegram(message)
+
+        if self.discord_webhook:
+            success = success and self._send_discord(message)
 
         return success

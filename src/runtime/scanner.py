@@ -24,10 +24,19 @@ from src.utils.logging import setup_logging
 class Scanner:
     """Main scanner for running the trading strategy."""
 
-    def __init__(self, config_path: str = "config.yaml", dry_run: bool = False):
+    def __init__(self, config_path: str = "config.yaml", dry_run: bool = False,
+                 use_cache_only: bool = False, level_trigger: bool = False,
+                 reset_state: bool = False, asset_x: str = None, asset_y: str = None,
+                 ignore_adv: bool = False):
         """Initialize scanner."""
         self.config = get_config(config_path)
         self.dry_run = dry_run
+        self.use_cache_only = use_cache_only
+        self.level_trigger = level_trigger
+        self.reset_state_flag = reset_state
+        self.asset_x = asset_x
+        self.asset_y = asset_y
+        self.ignore_adv = ignore_adv
 
         # Setup logging
         self.logger = setup_logging(
@@ -36,7 +45,7 @@ class Scanner:
         )
 
         # Initialize components
-        self.exchange = ExchangeClient()
+        self.exchange = None if self.use_cache_only else ExchangeClient()
         self.cache = DataCache()
         self.state_machine = TradingStateMachine(
             z_in=self.config.get("thresholds.z_in", 2.0),
@@ -61,25 +70,46 @@ class Scanner:
         self.logger.info(f"Starting scanner run: {run_id}")
 
         try:
+            # Optionally reset state to NEUTRAL (useful for dry runs)
+            if self.reset_state_flag:
+                self.state_machine.reset()
+
             # Step 1: Update data cache
-            symbols = self.config.get("symbols.base", ["BTC/USDT", "ETH/USDT"])
+            # Resolve symbols: CLI override takes precedence
+            if self.asset_x and self.asset_y:
+                symbols = [self.asset_x, self.asset_y]
+            else:
+                symbols = self.config.get("symbols.base", ["BTC/USDT", "ETH/USDT"])
             timeframe = self.config.get("timeframe", "1h")
 
-            self.logger.info("Updating data cache...")
-            data = self.cache.update_cache(
-                self.exchange,
-                symbols,
-                timeframe,
-                lookback_bars=self.config.get("filters.min_bars_required", 250)
-            )
+            if self.use_cache_only:
+                # Load from cache only, do not hit network
+                btc_data = self.cache.load_ohlcv(
+                    self.config.get("exchange", "binance"),
+                    symbols[0],
+                    timeframe
+                )
+                eth_data = self.cache.load_ohlcv(
+                    self.config.get("exchange", "binance"),
+                    symbols[1],
+                    timeframe
+                )
+            else:
+                self.logger.info("Updating data cache...")
+                data = self.cache.update_cache(
+                    self.exchange,
+                    symbols,
+                    timeframe,
+                    lookback_bars=self.config.get("filters.min_bars_required", 250)
+                )
 
-            if not data or len(data) != 2:
-                self.logger.error("Failed to fetch required data")
-                return
+                if not data or len(data) != 2:
+                    self.logger.error("Failed to fetch required data")
+                    return
 
-            # Extract BTC and ETH data
-            btc_data = data[symbols[0]]
-            eth_data = data[symbols[1]]
+                # Extract BTC and ETH data
+                btc_data = data[symbols[0]]
+                eth_data = data[symbols[1]]
 
             if btc_data.empty or eth_data.empty:
                 self.logger.error("Empty data received")
@@ -94,6 +124,12 @@ class Scanner:
                 zscore_window=self.config.get("windows.zscore", 100)
             )
 
+            # Seed previous z for first-run crossing detection if needed
+            if self.state_machine.previous_zscore is None and len(signals) >= 2:
+                prev = signals['zscore'].iloc[-2]
+                if pd.notna(prev):
+                    self.state_machine.previous_zscore = float(prev)
+
             # Add liquidity metrics
             btc_with_liquidity = self.cache.calculate_liquidity_metrics(btc_data)
             eth_with_liquidity = self.cache.calculate_liquidity_metrics(eth_data)
@@ -107,9 +143,12 @@ class Scanner:
 
             # Step 3: Check filters
             min_adv = self.config.get("filters.min_adv_usd", 5_000_000)
-            if latest_btc_adv < min_adv or latest_eth_adv < min_adv:
-                self.logger.warning(f"ADV filter not met: BTC={latest_btc_adv:.0f}, ETH={latest_eth_adv:.0f}")
-                return
+            if not self.ignore_adv:
+                if latest_btc_adv < min_adv or latest_eth_adv < min_adv:
+                    self.logger.warning(
+                        f"ADV filter not met: BTC={latest_btc_adv:.0f}, ETH={latest_eth_adv:.0f}"
+                    )
+                    return
 
             # Step 4: Process signal through state machine
             signal = self.state_machine.process_tick(
@@ -120,6 +159,32 @@ class Scanner:
                 btc_price=latest['btc_price'],
                 eth_price=latest['eth_price']
             )
+
+            # Optional: level-trigger when neutral (enter on level without crossing)
+            if (signal.signal_type == SignalType.NO_ACTION and self.level_trigger and
+                self.state_machine.current_state == self.state_machine.current_state.NEUTRAL and
+                pd.notna(latest['zscore'])):
+                z_in = self.config.get("thresholds.z_in", 2.0)
+                if abs(latest['zscore']) >= z_in:
+                    # Forge an entry signal based on sign
+                    stype = (SignalType.ENTER_SHORT_SPREAD if latest['zscore'] > 0
+                             else SignalType.ENTER_LONG_SPREAD)
+                    reason = f"Level trigger |z| >= {z_in}"
+                    from src.strategy.state import TradingSignal, PositionState
+                    new_state = (PositionState.SHORT_SPREAD if stype == SignalType.ENTER_SHORT_SPREAD
+                                 else PositionState.LONG_SPREAD)
+                    signal = TradingSignal(
+                        timestamp=signals.index[-1],
+                        signal_type=stype,
+                        zscore=float(latest['zscore']),
+                        beta=float(latest['beta']),
+                        spread=float(latest['spread']),
+                        reason=reason,
+                        btc_price=float(latest['btc_price']),
+                        eth_price=float(latest['eth_price']),
+                        previous_state=self.state_machine.current_state,
+                        new_state=new_state
+                    )
 
             # Step 5: Generate trade ticket if signal
             if signal.signal_type != SignalType.NO_ACTION:
@@ -144,9 +209,10 @@ class Scanner:
 
                 # Send notification
                 if not self.dry_run:
-                    self.notifier.send_trade_signal(signal, position_size)
+                    self.notifier.send_trade_signal(signal, position_size, ticket_text=ticket)
                     self.logger.info("Notification sent")
                 else:
+                    # Still attempt to send to non-external channels in dry-run? Keep skipped.
                     self.logger.info("DRY RUN - Notification skipped")
 
                 # Print ticket to console
@@ -199,9 +265,24 @@ def main():
     parser = argparse.ArgumentParser(description='Run trading scanner')
     parser.add_argument('--config', default='config.yaml', help='Config file path')
     parser.add_argument('--dry-run', action='store_true', help='Dry run mode')
+    parser.add_argument('--use-cache-only', action='store_true', help='Load from cache, no updates')
+    parser.add_argument('--level-trigger', action='store_true', help='Enter on level when neutral')
+    parser.add_argument('--reset-state', action='store_true', help='Start from NEUTRAL state')
+    parser.add_argument('--asset-x', help='Override X symbol, e.g., BTC/USDT')
+    parser.add_argument('--asset-y', help='Override Y symbol, e.g., ETH/USDT')
+    parser.add_argument('--ignore-adv', action='store_true', help='Ignore ADV filter')
     args = parser.parse_args()
 
-    scanner = Scanner(config_path=args.config, dry_run=args.dry_run)
+    scanner = Scanner(
+        config_path=args.config,
+        dry_run=args.dry_run,
+        use_cache_only=args.use_cache_only,
+        level_trigger=args.level_trigger,
+        reset_state=args.reset_state,
+        asset_x=args.asset_x,
+        asset_y=args.asset_y,
+        ignore_adv=args.ignore_adv,
+    )
     scanner.run()
 
 

@@ -58,6 +58,9 @@ class Config:
         if os.getenv("NOTIFY_SLACK_WEBHOOK"):
             self.config.setdefault("notifications", {})
             self.config["notifications"]["slack_webhook"] = os.getenv("NOTIFY_SLACK_WEBHOOK")
+        if os.getenv("NOTIFY_DISCORD_WEBHOOK"):
+            self.config.setdefault("notifications", {})
+            self.config["notifications"]["discord_webhook"] = os.getenv("NOTIFY_DISCORD_WEBHOOK")
 
         if os.getenv("NOTIFY_TELEGRAM_TOKEN"):
             self.config.setdefault("notifications", {})
@@ -66,6 +69,8 @@ class Config:
         if os.getenv("NOTIFY_TELEGRAM_CHAT_ID"):
             self.config.setdefault("notifications", {})
             self.config["notifications"]["telegram_chat_id"] = os.getenv("NOTIFY_TELEGRAM_CHAT_ID")
+
+        # Email/SMTP support removed per user request
 
     def _validate_config(self):
         """Validate required configuration settings."""

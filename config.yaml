@@ -185,6 +185,57 @@ pairs:
     asset_x: "ATOM/USDT"
     enabled: true
 
+  # Fill out remaining combos to reach full 45
+  - name: "ATOM-AVAX"
+    asset_y: "ATOM/USDT"
+    asset_x: "AVAX/USDT"
+    enabled: true
+
+  - name: "ATOM-BNB"
+    asset_y: "ATOM/USDT"
+    asset_x: "BNB/USDT"
+    enabled: true
+
+  - name: "ATOM-MATIC"
+    asset_y: "ATOM/USDT"
+    asset_x: "MATIC/USDT"
+    enabled: true
+
+  - name: "ATOM-SOL"
+    asset_y: "ATOM/USDT"
+    asset_x: "SOL/USDT"
+    enabled: true
+
+  - name: "AVAX-DOT"
+    asset_y: "AVAX/USDT"
+    asset_x: "DOT/USDT"
+    enabled: true
+
+  - name: "BNB-DOT"
+    asset_y: "BNB/USDT"
+    asset_x: "DOT/USDT"
+    enabled: true
+
+  - name: "BNB-LINK"
+    asset_y: "BNB/USDT"
+    asset_x: "LINK/USDT"
+    enabled: true
+
+  - name: "BNB-UNI"
+    asset_y: "BNB/USDT"
+    asset_x: "UNI/USDT"
+    enabled: true
+
+  - name: "DOT-MATIC"
+    asset_y: "DOT/USDT"
+    asset_x: "MATIC/USDT"
+    enabled: true
+
+  - name: "DOT-SOL"
+    asset_y: "DOT/USDT"
+    asset_x: "SOL/USDT"
+    enabled: true
+
 timeframe: "1h"
 
 # Signal Generation Windows
@@ -211,7 +262,7 @@ costs:
 
 # Filters
 filters:
-  min_adv_usd: 5000000             # Minimum average daily volume in USD
+  min_adv_usd: 1000000             # Minimum average hourly dollar volume threshold
   max_realized_vol_annual: 2.0     # Maximum annualized volatility
   min_bars_required: 250           # Minimum bars needed to start trading
 
@@ -228,6 +279,12 @@ notifications:
   slack_enabled: true
   telegram_enabled: false
   debounce_minutes: 5              # Minimum time between alerts
+  # Email notifications
+  email_enabled: true
+  email_backend: sendmail          # 'sendmail' or 'smtp'
+  sendmail_path: /usr/sbin/sendmail
+  email_to:
+    - domkav@gmail.com
 
 # Logging
 logging:
