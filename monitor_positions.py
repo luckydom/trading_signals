@@ -21,13 +21,15 @@ from src.data.cache import DataCache
 from src.data.exchange import ExchangeClient
 from src.features.spread import SpreadCalculator
 from src.features.cointegration import CointegrationTester
+from src.runtime.notify import NotificationManager
 
 
 class Position:
     """Represents an open position."""
 
     def __init__(self, pair: str, direction: str, entry_z: float, entry_date: str,
-                 entry_prices: Dict[str, float], quantities: Dict[str, float]):
+                 entry_prices: Dict[str, float], quantities: Dict[str, float],
+                 signal_sent: bool = False):
         self.pair = pair
         self.direction = direction  # "LONG" or "SHORT" spread
         self.entry_z = entry_z
@@ -35,6 +37,8 @@ class Position:
         self.entry_prices = entry_prices
         self.quantities = quantities
         self.is_open = True
+        # Prevent spamming notifications once an exit/stop is detected
+        self.signal_sent = signal_sent
 
     def to_dict(self):
         return {
@@ -44,14 +48,16 @@ class Position:
             'entry_date': self.entry_date,
             'entry_prices': self.entry_prices,
             'quantities': self.quantities,
-            'is_open': self.is_open
+            'is_open': self.is_open,
+            'signal_sent': self.signal_sent
         }
 
     @classmethod
     def from_dict(cls, data):
         pos = cls(
             data['pair'], data['direction'], data['entry_z'],
-            data['entry_date'], data['entry_prices'], data['quantities']
+            data['entry_date'], data['entry_prices'], data['quantities'],
+            signal_sent=data.get('signal_sent', False)
         )
         pos.is_open = data.get('is_open', True)
         return pos
@@ -74,6 +80,7 @@ class PositionMonitor:
         self.cache = DataCache()
         self.exchange = None if use_cache_only else ExchangeClient()
         self.coint_tester = CointegrationTester()
+        self.notifier = NotificationManager(self.config)
 
     def load_positions(self) -> List[Position]:
         """Load open positions from file."""
@@ -100,7 +107,8 @@ class PositionMonitor:
             entry_z=entry_z,
             entry_date=datetime.utcnow().isoformat(),
             entry_prices=entry_prices,
-            quantities=quantities
+            quantities=quantities,
+            signal_sent=False
         )
         self.positions.append(pos)
         self.save_positions()
@@ -236,8 +244,31 @@ class PositionMonitor:
             # Check exit conditions
             exit_signal = self.check_exit_conditions(position, current_z)
 
-            # Display status
+            # Send one-liner Slack notification on first exit signal only
+            if exit_signal and not position.signal_sent:
+                msg = self._format_exit_message(position, current_z, current_prices, exit_signal)
+                sent = False
+                if self.notifier.slack_enabled and self.notifier.slack_webhook:
+                    sent = self.notifier._send_slack(msg)
+                # Mark as signaled to avoid repeats
+                position.signal_sent = True
+                self.save_positions()
+
+            # Display status (local console)
             self.display_position_status(position, current_z, current_prices, pnl, exit_signal)
+
+    def _format_exit_message(self, position: Position, current_z: float, current_prices: Dict[str, float], reason: str) -> str:
+        """Build a compact one-liner suitable for Slack webhook."""
+        y, x = position.pair.split('-')
+        emoji = '✅' if 'EXIT SIGNAL' in reason else ('🛑' if 'STOP LOSS' in reason else '⚠️')
+        # Example: ✅ EXIT BTC-ETH SHORT | z=-0.42 | BTC=..., ETH=...
+        parts = [
+            f"{emoji} EXIT {position.pair} {position.direction}",
+            f"z={current_z:.2f}",
+            f"{y}={current_prices.get(y, 0):.4f}",
+            f"{x}={current_prices.get(x, 0):.4f}",
+        ]
+        return " | ".join(parts)
 
     def check_exit_conditions(self, position: Position, current_z: float) -> Optional[str]:
         """Check if position should be exited."""
