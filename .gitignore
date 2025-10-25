@@ -5,6 +5,21 @@ data/
 logs/
 tmp_scan_configs/
 signals/
-*.pyc
 reports/
-src/features/__pycache__/spread.cpython-312.pyc
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.$py.class
+
+# Test and tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage*
+
+# OS/editor artifacts
+.DS_Store
+Thumbs.db
+.idea/
