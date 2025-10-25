@@ -19,6 +19,9 @@
 - Test Discord webhook only: `python -m src.runtime.batch_scanner --test-discord`
 - Quick status (no notifications): `./check_status.py --show-all` (reads cache and prints latest z/beta)
 - Lint/format (local): `ruff .` and `black .`
+- Backtest (BTC/ETH): `python -m src.backtest.simulator --config config.yaml [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD]`
+ - Backtest HTML (BTC/ETH): add `--html reports/btc_eth.html`
+ - Multi-pair backtest summary: `python -m src.backtest.multi --config config.yaml --out-dir reports [--start-date YYYY-MM-DD] [--end-date YYYY-MM-DD]`
 
 ## Coding Style & Naming Conventions
 - Python 3.9+; Black line length 100; Ruff for linting/imports.
@@ -56,4 +59,4 @@
 - State seeding: if `previous_zscore` is missing, batch scanner seeds it from the prior bar to enable crossing detection.
 
 ## Removed/Legacy Entrypoints
-- Single-pair scanner, backtester CLI, and paper-trading scripts were removed; batch scanner is the primary entrypoint.
+- Single-pair scanner and paper-trading scripts were removed; batch scanner is the primary entrypoint.

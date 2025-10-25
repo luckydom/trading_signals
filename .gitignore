@@ -6,3 +6,5 @@ logs/
 tmp_scan_configs/
 signals/
 *.pyc
+reports/
+src/features/__pycache__/spread.cpython-312.pyc

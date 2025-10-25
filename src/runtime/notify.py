@@ -57,8 +57,8 @@ class NotificationManager:
             self.logger.info("Notification debounced")
             return False
 
-        # Format message
-        message = self._format_message(signal, position_size)
+        # Prefer caller-provided ticket text (unified formatting across channels)
+        message = ticket_text or self._format_message(signal, position_size)
 
         # Send to enabled channels
         success = True
@@ -70,8 +70,7 @@ class NotificationManager:
 
         # Discord webhook
         if self.discord_webhook:
-            text = ticket_text or message
-            success = success and self._send_discord(text)
+            success = success and self._send_discord(message)
 
         # Update last notification time
         if success:

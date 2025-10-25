@@ -40,6 +40,7 @@ def run_batch(
     level_trigger: bool = False,
     ignore_adv: bool = False,
     test_discord: bool = False,
+    backfill_bars: int = None,
 ):
     config = get_config(config_path)
     logger = setup_logging(
@@ -90,6 +91,8 @@ def run_batch(
     z_w = int(config.get("windows.zscore", 100) or 100)
     min_required = int(config.get("filters.min_bars_required", 250) or 250)
     effective_bars = max(min_required, beta_w + z_w + 50)
+    if backfill_bars and backfill_bars > effective_bars:
+        effective_bars = int(backfill_bars)
 
     if use_cache_only:
         data_map = {}
@@ -106,9 +109,8 @@ def run_batch(
             df = data_map.get(sym, pd.DataFrame())
             if df is None or df.empty or len(df) < effective_bars:
                 try:
-                    # Fetch a larger slice to backfill
-                    hist = exchange.fetch_ohlcv(symbol=sym, timeframe=timeframe,
-                                                since=None, limit=effective_bars)
+                    # Fetch a larger slice to backfill with pagination
+                    hist = exchange.fetch_ohlcv_bars(symbol=sym, timeframe=timeframe, bars=effective_bars)
                     if hist is not None and not hist.empty:
                         cache.save_ohlcv(hist, exchange_name, sym, timeframe, append=True)
                         data_map[sym] = cache.load_ohlcv(exchange_name, sym, timeframe)
@@ -250,6 +252,7 @@ def main():
     parser.add_argument('--level-trigger', action='store_true')
     parser.add_argument('--ignore-adv', action='store_true')
     parser.add_argument('--test-discord', action='store_true', help='Send a test Discord message and exit')
+    parser.add_argument('--backfill-bars', type=int, help='Override bars to backfill for signals (e.g., 3000)')
     args = parser.parse_args()
 
     run_batch(
@@ -259,6 +262,7 @@ def main():
         level_trigger=args.level_trigger,
         ignore_adv=args.ignore_adv,
         test_discord=args.test_discord,
+        backfill_bars=args.backfill_bars,
     )
 
 

@@ -31,9 +31,6 @@ class TradeTicketGenerator:
         Returns:
             Formatted trade ticket string
         """
-        # Format timestamp
-        timestamp_str = signal.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
-
         # Resolve leg labels from symbols (use base asset names)
         y_name = (y_symbol.split("/")[0] if "/" in y_symbol else y_symbol)
         x_name = (x_symbol.split("/")[0] if "/" in x_symbol else x_symbol)
@@ -60,15 +57,13 @@ class TradeTicketGenerator:
             y_side = "NONE"
             x_side = "NONE"
 
-        # Build ticket
+        # Build ticket in the requested compact format
         ticket_lines = [
-            "=" * 60,
-            "TRADE TICKET",
-            "=" * 60,
-            f"Timestamp: {timestamp_str}",
-            f"Signal: {action}",
+            "=" * 5,
+            "TRADE",
+            "=" * 5,
             "",
-            "Market Data:",
+            f"Signal: {action}",
             f"  Z-score: {signal.zscore:.3f}",
             f"  Beta (hedge ratio): {signal.beta:.3f}",
             f"  Spread: {signal.spread:.4f}",
@@ -79,33 +74,12 @@ class TradeTicketGenerator:
             f"  {y_name}: {y_side} ${position_size.eth_notional_usd:,.2f} ({position_size.eth_units:.4f} {y_name})",
             f"  {x_name}: {x_side} ${position_size.btc_notional_usd:,.2f} ({position_size.btc_units:.6f} {x_name})",
             f"  Total Notional: ${position_size.total_notional:,.2f}",
-            f"  Leverage: {position_size.leverage:.1f}x",
-            "",
-            "Risk Parameters:",
-            f"  Stop Loss: |z| > 3.5",
-            f"  Exit Target: |z| < 0.5",
-            f"  Risk per Z-score: ${position_size.risk_per_zscore:.2f}",
-            "",
-            "Costs:",
-            f"  Est. Fees: ${position_size.expected_fees:.2f}",
-            f"  Est. Slippage: ${position_size.expected_slippage:.2f}",
-            "",
-            "Notes:",
-            f"  Reason: {signal.reason}",
+            "===",
+            "END",
+            "===",
         ]
 
-        # Add funding info if available
-        if funding_info:
-            btc_funding = funding_info.get('btc_funding', 0)
-            eth_funding = funding_info.get('eth_funding', 0)
-            funding_diff = abs(btc_funding - eth_funding)
-            ticket_lines.extend([
-                f"  BTC Funding: {btc_funding:.4%}",
-                f"  ETH Funding: {eth_funding:.4%}",
-                f"  Funding Diff: {funding_diff:.4%}",
-            ])
-
-        ticket_lines.append("=" * 60)
+        # Note: Funding info intentionally omitted in compact format
 
         return "\n".join(ticket_lines)
 
