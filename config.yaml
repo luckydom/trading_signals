@@ -315,6 +315,170 @@ pairs:
     asset_x: "ADA/USDT"
     enabled: true
 
+  # Additional currencies (expanded set): LTC, BCH, TON, ARB, OP, APT, SUI, FIL, ETC, XLM, ICP
+  # BTC anchors
+  - name: "LTC-BTC"
+    asset_y: "LTC/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "BCH-BTC"
+    asset_y: "BCH/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "TON-BTC"
+    asset_y: "TON/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "ARB-BTC"
+    asset_y: "ARB/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "OP-BTC"
+    asset_y: "OP/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "APT-BTC"
+    asset_y: "APT/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "SUI-BTC"
+    asset_y: "SUI/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "FIL-BTC"
+    asset_y: "FIL/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "ETC-BTC"
+    asset_y: "ETC/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "XLM-BTC"
+    asset_y: "XLM/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "ICP-BTC"
+    asset_y: "ICP/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  # ETH anchors
+  - name: "LTC-ETH"
+    asset_y: "LTC/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "BCH-ETH"
+    asset_y: "BCH/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "TON-ETH"
+    asset_y: "TON/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "ARB-ETH"
+    asset_y: "ARB/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "OP-ETH"
+    asset_y: "OP/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "APT-ETH"
+    asset_y: "APT/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "SUI-ETH"
+    asset_y: "SUI/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "FIL-ETH"
+    asset_y: "FIL/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "ETC-ETH"
+    asset_y: "ETC/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "XLM-ETH"
+    asset_y: "XLM/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "ICP-ETH"
+    asset_y: "ICP/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  # Cross-pairs among newly added currencies (select set)
+  - name: "LTC-BCH"
+    asset_y: "LTC/USDT"
+    asset_x: "BCH/USDT"
+    enabled: true
+
+  - name: "TON-ARB"
+    asset_y: "TON/USDT"
+    asset_x: "ARB/USDT"
+    enabled: true
+
+  - name: "OP-ARB"
+    asset_y: "OP/USDT"
+    asset_x: "ARB/USDT"
+    enabled: true
+
+  - name: "APT-SUI"
+    asset_y: "APT/USDT"
+    asset_x: "SUI/USDT"
+    enabled: true
+
+  - name: "FIL-ETC"
+    asset_y: "FIL/USDT"
+    asset_x: "ETC/USDT"
+    enabled: true
+
+  - name: "XLM-ICP"
+    asset_y: "XLM/USDT"
+    asset_x: "ICP/USDT"
+    enabled: true
+
+  - name: "LTC-TON"
+    asset_y: "LTC/USDT"
+    asset_x: "TON/USDT"
+    enabled: true
+
+  - name: "BCH-ETC"
+    asset_y: "BCH/USDT"
+    asset_x: "ETC/USDT"
+    enabled: true
+
+  - name: "ARB-OP"
+    asset_y: "ARB/USDT"
+    asset_x: "OP/USDT"
+    enabled: true
+
+  - name: "APT-ARB"
+    asset_y: "APT/USDT"
+    asset_x: "ARB/USDT"
+    enabled: true
+
 timeframe: "1h"
 
 # Signal Generation Windows
