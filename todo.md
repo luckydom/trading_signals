@@ -307,6 +307,8 @@ notifications:
   - Cache grows only by 1 bar per run.
 
 ---
+## Implementation is finished
+Done
 
 ## Optional extensions (after MVP)
 

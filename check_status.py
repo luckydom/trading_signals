@@ -61,19 +61,35 @@ def main():
             beta_window=beta_window,
             zscore_window=zscore_window,
         )
-        latest = signals.iloc[-1]
-        z = latest["zscore"]
-        if pd.isna(z):
+        # Prefer the latest non-NaN z-score; the very last row can be NaN due to window edges
+        last_valid_idx = signals["zscore"].last_valid_index()
+        if last_valid_idx is None:
+            # No computable z-score for this pair
+            if args.show_all:
+                # Emit a placeholder row so users can see which pairs lack data
+                rows.append({
+                    "name": name,
+                    "z": float("nan"),
+                    "beta": float(signals["beta"].dropna().iloc[-1]) if signals["beta"].notna().any() else float("nan"),
+                    "y": y_symbol.split("/")[0],
+                    "x": x_symbol.split("/")[0],
+                    "y_price": float(y_data["close"].iloc[-1]),
+                    "x_price": float(x_data["close"].iloc[-1]),
+                    "ts": y_data.index[-1],
+                })
             continue
+
+        latest = signals.loc[last_valid_idx]
+        z = float(latest["zscore"]) if pd.notna(latest["zscore"]) else float("nan")
         rows.append({
             "name": name,
-            "z": float(z),
+            "z": z,
             "beta": float(latest["beta"]),
             "y": y_symbol.split("/")[0],
             "x": x_symbol.split("/")[0],
             "y_price": float(latest["eth_price"]),
             "x_price": float(latest["btc_price"]),
-            "ts": signals.index[-1],
+            "ts": last_valid_idx,
         })
 
     if args.sort == "absz":
@@ -83,10 +99,13 @@ def main():
 
     printed_any = False
     for r in rows:
-        if not args.show_all and abs(r["z"]) < z_threshold:
-            continue
-        direction = "LONG" if r["z"] < 0 else "SHORT"
-        print(f"{r['name']}: {direction} spread | z={r['z']:.2f} | beta={r['beta']:.3f} | "
+        # When show-all, print even if z is NaN
+        if not args.show_all:
+            if pd.isna(r["z"]) or abs(r["z"]) < z_threshold:
+                continue
+        direction = ("N/A" if pd.isna(r["z"]) else ("LONG" if r["z"] < 0 else "SHORT"))
+        z_str = ("  nan" if pd.isna(r["z"]) else f"{r['z']:.2f}")
+        print(f"{r['name']}: {direction} spread | z={z_str} | beta={r['beta']:.3f} | "
               f"{r['y']}={r['y_price']:.2f} | {r['x']}={r['x_price']:.2f} | {r['ts']}")
         printed_any = True
 

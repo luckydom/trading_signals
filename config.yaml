@@ -236,6 +236,85 @@ pairs:
     asset_x: "SOL/USDT"
     enabled: true
 
+  # New currencies (added): ADA, XRP, DOGE, TRX, NEAR
+  # Anchored to BTC
+  - name: "ADA-BTC"
+    asset_y: "ADA/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "XRP-BTC"
+    asset_y: "XRP/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "DOGE-BTC"
+    asset_y: "DOGE/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "TRX-BTC"
+    asset_y: "TRX/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  - name: "NEAR-BTC"
+    asset_y: "NEAR/USDT"
+    asset_x: "BTC/USDT"
+    enabled: true
+
+  # Anchored to ETH
+  - name: "ADA-ETH"
+    asset_y: "ADA/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "XRP-ETH"
+    asset_y: "XRP/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "DOGE-ETH"
+    asset_y: "DOGE/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "TRX-ETH"
+    asset_y: "TRX/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  - name: "NEAR-ETH"
+    asset_y: "NEAR/USDT"
+    asset_x: "ETH/USDT"
+    enabled: true
+
+  # Cross-pairs among new currencies
+  - name: "ADA-XRP"
+    asset_y: "ADA/USDT"
+    asset_x: "XRP/USDT"
+    enabled: true
+
+  - name: "ADA-DOGE"
+    asset_y: "ADA/USDT"
+    asset_x: "DOGE/USDT"
+    enabled: true
+
+  - name: "XRP-DOGE"
+    asset_y: "XRP/USDT"
+    asset_x: "DOGE/USDT"
+    enabled: true
+
+  - name: "TRX-DOGE"
+    asset_y: "TRX/USDT"
+    asset_x: "DOGE/USDT"
+    enabled: true
+
+  - name: "NEAR-ADA"
+    asset_y: "NEAR/USDT"
+    asset_x: "ADA/USDT"
+    enabled: true
+
 timeframe: "1h"
 
 # Signal Generation Windows

@@ -85,6 +85,12 @@ def run_batch(
         symbols.add(p["asset_y"])  # numerator
         symbols.add(p["asset_x"])  # denominator
 
+    # Compute effective minimum history needed for signal stability
+    beta_w = int(config.get("windows.ols_beta", 200) or 200)
+    z_w = int(config.get("windows.zscore", 100) or 100)
+    min_required = int(config.get("filters.min_bars_required", 250) or 250)
+    effective_bars = max(min_required, beta_w + z_w + 50)
+
     if use_cache_only:
         data_map = {}
         for sym in symbols:
@@ -92,8 +98,23 @@ def run_batch(
     else:
         # Update all symbols in one call to minimize exchange requests
         updated = cache.update_cache(exchange, sorted(symbols), timeframe,
-                                     lookback_bars=config.get("filters.min_bars_required", 250))
+                                     lookback_bars=effective_bars)
         data_map = updated
+
+        # Ensure cache has enough history; backfill if too short for any symbol
+        for sym in symbols:
+            df = data_map.get(sym, pd.DataFrame())
+            if df is None or df.empty or len(df) < effective_bars:
+                try:
+                    # Fetch a larger slice to backfill
+                    hist = exchange.fetch_ohlcv(symbol=sym, timeframe=timeframe,
+                                                since=None, limit=effective_bars)
+                    if hist is not None and not hist.empty:
+                        cache.save_ohlcv(hist, exchange_name, sym, timeframe, append=True)
+                        data_map[sym] = cache.load_ohlcv(exchange_name, sym, timeframe)
+                        logger.info(f"Backfilled {sym} to {len(data_map[sym])} bars")
+                except Exception as e:
+                    logger.warning(f"Backfill failed for {sym}: {e}")
 
     for pair in pairs:
         name = pair["name"]
@@ -185,7 +206,7 @@ def run_batch(
                 ticket = ticket_gen.generate_ticket(
                     signal, pos, y_symbol=y_symbol, x_symbol=x_symbol, funding_info={}
                 )
-                ticket_file = ticket_gen.save_ticket(ticket, run_id)
+                ticket_file = ticket_gen.save_ticket(ticket, run_id, pair_slug=safe_name(name))
                 logger.info(f"{name}: ticket saved -> {ticket_file}")
                 tickets.append(f"{name}\n{ticket}")
 

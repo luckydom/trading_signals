@@ -109,13 +109,14 @@ class TradeTicketGenerator:
 
         return "\n".join(ticket_lines)
 
-    def save_ticket(self, ticket: str, run_id: str) -> Path:
+    def save_ticket(self, ticket: str, run_id: str, pair_slug: Optional[str] = None) -> Path:
         """
         Save trade ticket to file.
 
         Args:
             ticket: Formatted ticket string
             run_id: Run identifier
+            pair_slug: Optional safe pair identifier to avoid filename collisions
 
         Returns:
             Path to saved ticket file
@@ -123,8 +124,12 @@ class TradeTicketGenerator:
         ticket_dir = Path("signals")
         ticket_dir.mkdir(parents=True, exist_ok=True)
 
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        ticket_file = ticket_dir / f"ticket_{timestamp}_{run_id}.txt"
+        # High-resolution timestamp to avoid collisions within the same second
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+
+        # Optional pair slug helps keep files unique and discoverable per pair
+        suffix = f"_{pair_slug}" if pair_slug else ""
+        ticket_file = ticket_dir / f"ticket_{timestamp}_{run_id}{suffix}.txt"
 
         with open(ticket_file, 'w') as f:
             f.write(ticket)
@@ -135,7 +140,8 @@ class TradeTicketGenerator:
         self,
         signal: TradingSignal,
         position_size: PositionSize,
-        run_id: str
+        run_id: str,
+        pair_slug: Optional[str] = None
     ) -> Path:
         """
         Save ticket data as JSON for programmatic access.
@@ -151,8 +157,9 @@ class TradeTicketGenerator:
         ticket_dir = Path("signals")
         ticket_dir.mkdir(parents=True, exist_ok=True)
 
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        json_file = ticket_dir / f"signal_{timestamp}_{run_id}.json"
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+        suffix = f"_{pair_slug}" if pair_slug else ""
+        json_file = ticket_dir / f"signal_{timestamp}_{run_id}{suffix}.json"
 
         data = {
             'timestamp': signal.timestamp.isoformat(),
