@@ -22,6 +22,7 @@ from src.utils.config import get_config
 from src.data.exchange import ExchangeClient
 from src.data.cache import DataCache
 from src.features.spread import SpreadCalculator
+from src.features.cointegration import CointegrationTester
 from src.strategy.state import TradingStateMachine, SignalType
 from src.strategy.sizing import VolatilityTargetingSizer
 from src.runtime.tickets import TradeTicketGenerator
@@ -41,6 +42,7 @@ def run_batch(
     ignore_adv: bool = False,
     test_discord: bool = False,
     backfill_bars: int = None,
+    require_cointegration: bool = True,
 ):
     config = get_config(config_path)
     logger = setup_logging(
@@ -51,6 +53,14 @@ def run_batch(
     exchange_name = config.get("exchange", "binance")
     timeframe = config.get("timeframe", "1h")
     z_in = config.get("thresholds.z_in", 2.0)
+
+    # Initialize cointegration tester
+    coint_tester = CointegrationTester(
+        adf_threshold=config.get('adf_threshold', 0.05),
+        min_half_life=config.get('min_half_life', 1.0),
+        max_half_life=config.get('max_half_life', 30.0),
+        lookback_window=config.get('cointegration_lookback', 500)
+    )
 
     notifier = NotificationManager(config)
 
@@ -132,6 +142,20 @@ def run_batch(
             if y_df.empty or x_df.empty:
                 logger.warning(f"No data for {name}")
                 continue
+
+            # Test cointegration before proceeding
+            if require_cointegration:
+                coint_result = coint_tester.test_cointegration(
+                    y_df['close'],
+                    x_df['close']
+                )
+
+                if not coint_result['is_cointegrated']:
+                    logger.info(f"{name}: Not cointegrated - {coint_result.get('reason', 'Unknown')}")
+                    continue
+
+                logger.info(f"{name}: Cointegrated ✅ (p={coint_result.get('adf_pvalue', 1.0):.3f}, "
+                          f"half_life={coint_result.get('half_life', 0):.1f})")
 
             # Signals
             signals = SpreadCalculator.calculate_all_signals(
@@ -253,6 +277,8 @@ def main():
     parser.add_argument('--ignore-adv', action='store_true')
     parser.add_argument('--test-discord', action='store_true', help='Send a test Discord message and exit')
     parser.add_argument('--backfill-bars', type=int, help='Override bars to backfill for signals (e.g., 3000)')
+    parser.add_argument('--no-cointegration', action='store_true',
+                       help='Disable cointegration requirement (not recommended)')
     args = parser.parse_args()
 
     run_batch(
@@ -263,6 +289,7 @@ def main():
         ignore_adv=args.ignore_adv,
         test_discord=args.test_discord,
         backfill_bars=args.backfill_bars,
+        require_cointegration=not args.no_cointegration,  # Default is True (require cointegration)
     )
 
 
