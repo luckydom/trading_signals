@@ -137,6 +137,16 @@ class PositionMonitor:
             symbol1 = f"{symbols[0]}/USDT"
             symbol2 = f"{symbols[1]}/USDT"
 
+            # For Bybit perps (linear), normalize symbols (e.g., BTC/USDT -> BTC/USDT:USDT)
+            if self.exchange:
+                try:
+                    norm_symbol1 = self.exchange._normalize_symbol(symbol1)  # normalized for CCXT
+                    norm_symbol2 = self.exchange._normalize_symbol(symbol2)
+                except Exception:
+                    norm_symbol1, norm_symbol2 = symbol1, symbol2
+            else:
+                norm_symbol1, norm_symbol2 = symbol1, symbol2
+
             # Fetch fresh data or load from cache
             if self.exchange:
                 try:
@@ -202,8 +212,8 @@ class PositionMonitor:
             if self.exchange:
                 try:
                     # Fetch real-time spot prices
-                    ticker1 = self.exchange.exchange.fetch_ticker(symbol1)
-                    ticker2 = self.exchange.exchange.fetch_ticker(symbol2)
+                    ticker1 = self.exchange.exchange.fetch_ticker(norm_symbol1)
+                    ticker2 = self.exchange.exchange.fetch_ticker(norm_symbol2)
                     current_prices = {
                         symbols[0]: ticker1['last'],
                         symbols[1]: ticker2['last']

@@ -51,6 +51,14 @@
 - Signals directory: `signals/` is output-only; no component reads from it.
 - Logging: scanner logs at `logs/scanner.log`, per-run JSON in `logs/runs/`.
 
+## Exchange & Markets
+- Exchange is configured via `config.yaml` key `exchange` (e.g., `bybit`).
+- Market type (spot vs perps) is controlled by `market_type` in `config.yaml` (e.g., `linear` for USDT‑margined perps).
+- Symbol handling:
+  - Spot symbols: `BTC/USDT`
+  - Bybit linear perps: `BTC/USDT:USDT` (the code auto‑maps `BTC/USDT` → `BTC/USDT:USDT` when `market_type=linear`).
+  - Cache filenames normalize `/` and `:` to `_`.
+
 ## Batch Scanner Behavior & Flags
 - Reads enabled pairs from `config.yaml` → `pairs` list.
 - ADV filter runs before state; use `--ignore-adv` if you need EXIT/STOP decisions while already in a position.

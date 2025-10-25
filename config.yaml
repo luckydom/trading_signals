@@ -1,5 +1,5 @@
 # Trading Strategy Configuration
-exchange: binance
+exchange: bybit
 
 # Single pair for backwards compatibility
 symbols:
@@ -22,10 +22,6 @@ pairs:
     asset_x: "SOL/USDT"
     enabled: true
 
-  - name: "MATIC-BNB"
-    asset_y: "MATIC/USDT"
-    asset_x: "BNB/USDT"
-    enabled: true
 
   - name: "LINK-UNI"
     asset_y: "LINK/USDT"
@@ -48,10 +44,6 @@ pairs:
     asset_x: "BTC/USDT"
     enabled: true
 
-  - name: "MATIC-BTC"
-    asset_y: "MATIC/USDT"
-    asset_x: "BTC/USDT"
-    enabled: true
 
   - name: "BNB-BTC"
     asset_y: "BNB/USDT"
@@ -84,10 +76,6 @@ pairs:
     asset_x: "ETH/USDT"
     enabled: true
 
-  - name: "MATIC-ETH"
-    asset_y: "MATIC/USDT"
-    asset_x: "ETH/USDT"
-    enabled: true
 
   - name: "BNB-ETH"
     asset_y: "BNB/USDT"
@@ -125,10 +113,6 @@ pairs:
     asset_x: "AVAX/USDT"
     enabled: true
 
-  - name: "SOL-MATIC"
-    asset_y: "SOL/USDT"
-    asset_x: "MATIC/USDT"
-    enabled: true
 
   - name: "SOL-LINK"
     asset_y: "SOL/USDT"
@@ -140,10 +124,6 @@ pairs:
     asset_x: "UNI/USDT"
     enabled: true
 
-  - name: "AVAX-MATIC"
-    asset_y: "AVAX/USDT"
-    asset_x: "MATIC/USDT"
-    enabled: true
 
   - name: "AVAX-LINK"
     asset_y: "AVAX/USDT"
@@ -155,15 +135,7 @@ pairs:
     asset_x: "UNI/USDT"
     enabled: true
 
-  - name: "MATIC-LINK"
-    asset_y: "MATIC/USDT"
-    asset_x: "LINK/USDT"
-    enabled: true
 
-  - name: "MATIC-UNI"
-    asset_y: "MATIC/USDT"
-    asset_x: "UNI/USDT"
-    enabled: true
 
   - name: "LINK-DOT"
     asset_y: "LINK/USDT"
@@ -196,10 +168,6 @@ pairs:
     asset_x: "BNB/USDT"
     enabled: true
 
-  - name: "ATOM-MATIC"
-    asset_y: "ATOM/USDT"
-    asset_x: "MATIC/USDT"
-    enabled: true
 
   - name: "ATOM-SOL"
     asset_y: "ATOM/USDT"
@@ -226,10 +194,6 @@ pairs:
     asset_x: "UNI/USDT"
     enabled: true
 
-  - name: "DOT-MATIC"
-    asset_y: "DOT/USDT"
-    asset_x: "MATIC/USDT"
-    enabled: true
 
   - name: "DOT-SOL"
     asset_y: "DOT/USDT"
